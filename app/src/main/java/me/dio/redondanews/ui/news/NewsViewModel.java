@@ -3,28 +3,51 @@ package me.dio.redondanews.ui.news;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
-import java.util.ArrayList;
 import java.util.List;
 
+import me.dio.redondanews.data.remote.RedondaNewsApi;
 import me.dio.redondanews.domain.News;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 public class NewsViewModel extends ViewModel {
 
-    private final MutableLiveData<List<News>> news;
+    private final MutableLiveData<List<News>> news = new MutableLiveData<>();
+    private final RedondaNewsApi api;
 
     public NewsViewModel() {
-        news = new MutableLiveData<>();
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl("https://wtsntc.github.io/redonda-news-api/")
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
 
-        //TODO Remover mock de noticias
-        List<News> news =  new ArrayList<>();
-        news.add(new News("Ferrovária tem desfalque importante",""));
-        news.add(new News("Ferrinha joga no sabado", ""));
-        news.add(new News("Copa do mundo feminina está terminando ", ""));
+        api = retrofit.create(RedondaNewsApi.class);
+        findNews();
 
-        this.news.setValue(news);
-}
+    }
 
-     public MutableLiveData<List<News>> getNews() {
+    private void findNews() {
+        api.getNews().enqueue(new Callback<List<News>>() {
+            @Override
+            public void onResponse(Call<List<News>> call, Response<List<News>> response) {
+                if (response.isSuccessful()) {
+                    news.setValue(response.body());
+                } else {
+                    //TODO Pensar em uma estratégia de tratamento de erros.
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<News>> call, Throwable t) {
+                   //TODO Pensar em uma estratégia de tratamento de erros.
+            }
+        });
+    }
+
+    public MutableLiveData<List<News>> getNews() {
     return  news;
     }
 }
